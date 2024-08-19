@@ -4,9 +4,15 @@ import "dotenv/config";
 import express from "express";
 import { buildSchema } from "graphql";
 import { createHandler } from "graphql-http/lib/use/express";
-import { authRootValue } from "./graphql/auth";
+import { authRootValue } from "./graphql/rootValue/auth";
+import { configureEnvironmentAndRoutes } from "./lib/setUpMode";
+import { blogType, commentType } from "./graphql/types/blog.type";
+import { topicType } from "./graphql/types/topic.types";
+import { authType } from "./graphql/types/auth.type";
+import { blogQuery } from "./graphql/blog/blog.query";
+import { blogMutation } from "./graphql/blog/blog.mutation";
 
-const app = express();
+export const app = express();
 
 app.use(
   cors({
@@ -16,55 +22,30 @@ app.use(
 );
 app.use(CookieParser());
 
-const PORT = process.env.PORT || 8080;
+const PORT = Number(process.env.PORT) || 8080;
 
-var schema = buildSchema(`
-  type User {
-    id: ID!
-    username: String!
-  }
+configureEnvironmentAndRoutes(PORT);
 
-  type AuthPayload {
-    token: String
-    user: User
-  }
-
-  type Query {
-    getUserInfo: User
-  }
-
-  type Mutation {
-    register(email:String!,name:String!,userName: String!, password: String!): User
-    login(identifier: String!, password: String!): AuthPayload
-  }
-`);
+var schema = buildSchema(
+  authType +
+    blogType +
+    commentType +
+    topicType +
+    `
+    type Query {
+    ${blogQuery}
+    }
+    ` +
+    `
+    type Mutation {
+    ${blogMutation}
+    }
+    `
+);
 
 var rootValue = {
   ...authRootValue,
 };
-
-async function setupDevMode() {
-  if (process.env.NODE_ENV !== "production") {
-    // @ts-ignore
-    const { ruruHTML } = await import("ruru/server");
-    process.stdout.write(
-      `Server running in development mode\nAccess Ruru server on http://localhost:${PORT}\n`
-    );
-
-    app.get("/", (_req, res) => {
-      res.type("html");
-      res.end(ruruHTML({ endpoint: "/graphql" }));
-    });
-  } else {
-    process.stdout.write(`Server running in production mode\n`);
-
-    app.get("/", (_, res) => {
-      res.send("Hello world!");
-    });
-  }
-}
-
-setupDevMode();
 
 app.all(
   "/graphql",

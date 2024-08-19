@@ -1,7 +1,7 @@
 import jsonwebtoken from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import { db } from "../lib/db";
-import { authenticate } from "../middleware/auth-middleware";
+import { db } from "../../lib/db";
+import { authenticate } from "../../middleware/auth-middleware";
 
 export const authRootValue = {
   register: async ({

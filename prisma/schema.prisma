@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Blog {
+  id         Int      @id @default(autoincrement())
+  title      String
+  slug       String
+  body       String
+  coverImage String   @default("https://picsum.photos/200/300")
+  featured   Boolean  @default(false)
+  authorId   Int
+  author     User     @relation(fields: [authorId], references: [id], map: "Blog_Author")
+  comments   Comment[]
+  likes      User[]   @relation("LikedBlogs")
+  dislikes   User[]   @relation("DislikedBlogs")
+  topics     Topic[]  @relation("BlogTopics")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  body      String
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], map: "Comment_User")
+  blogId    Int
+  blog      Blog     @relation(fields: [blogId], references: [id], map: "Comment_Blog")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  likedBy   User[]   @relation("LikedComments")
+  dislikedBy User[]   @relation("DislikedComments")
+}
+
+model Topic {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  coverImage  String   @default("https://picsum.photos/200/300")
+  blogs       Blog[]   @relation("BlogTopics")
+  followers   User[]   @relation("FollowedTopics")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model User {
+  id              Int      @id @default(autoincrement())
+  name            String
+  userName        String   @unique
+  email           String   @unique
+  password        String
+  profileImage    String   @default("https://utfs.io/f/a530b22b-056d-45cd-b654-321c81330e2c-psn5nt.jpeg")
+  coverImage      String   @default("https://utfs.io/f/59dc6f5f-1fbf-4f6d-a7be-898c2aaf45ea-xs78l3.jpg")
+  bio             String   @default("No bio yet")
+  blogs           Blog[]
+  followers       User[]   @relation("UserFollowers", map: "User_Followers")
+  following       User[]   @relation("UserFollowing", map: "User_Following")
+  comments        Comment[]
+  likedBlogs      Blog[]   @relation("LikedBlogs", map: "User_LikedBlogs")
+  dislikedBlogs   Blog[]   @relation("DislikedBlogs", map: "User_DislikedBlogs")
+  likedComments   Comment[] @relation("LikedComments", map: "User_LikedComments")
+  dislikedComments Comment[] @relation("DislikedComments", map: "User_DislikedComments")
+  topicsFollowed  Topic[]  @relation("FollowedTopics", map: "User_TopicsFollowed")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  followingBy     User[]   @relation("UserFollowers")
+  followedBy      User[]   @relation("UserFollowing")
+}
